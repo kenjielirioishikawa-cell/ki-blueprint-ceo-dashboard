@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KI BLUEPRINT™ CEO MANAGER — Operating Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-900:#0B1F35; --ink-800:#14304F; --ink-700:#1D4066;
+    --line-soft: rgba(234,242,250,0.14); --line-strong: rgba(234,242,250,0.34);
+    --paper:#EAF2FA; --paper-warm:#F4F7FB;
+    --stamp:#E8622C; --stamp-dim:#C24E20;
+    --ok:#4FA37A; --warn:#E0B23D; --bad:#D9584F;
+    --display:'Space Grotesk',sans-serif; --body:'IBM Plex Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink-900);color:var(--paper);font-family:var(--body);}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+  .grid-bg{
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:32px 32px;
+  }
+  
+  .banner{
+    background:rgba(217,88,79,0.15);border:1px solid var(--bad);border-bottom:2px solid var(--bad);
+    padding:12px 0;margin-bottom:20px;display:none;
+  }
+  .banner.show{display:block;}
+  .banner-inner{display:flex;align-items:center;gap:12px;font-size:0.85rem;}
+  .banner-icon{color:var(--bad);font-weight:700;}
+  .banner-text{flex:1;}
+  .banner-text strong{display:block;margin-bottom:3px;}
+  .banner-text span{color:rgba(234,242,250,0.6);font-size:0.8rem;}
+  
+  header.top{
+    border-bottom:1px solid var(--line-soft);padding:22px 0;
+    position:sticky;top:0;background:var(--ink-900);z-index:10;
+  }
+  .top-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .mark{width:24px;height:24px;border:1.5px solid var(--stamp);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.72rem;color:var(--stamp);}
+  .brand h1{font-family:var(--display);font-size:1.05rem;margin:0;font-weight:700;}
+  .brand .sub{font-family:var(--mono);font-size:0.72rem;color:rgba(234,242,250,0.5);margin-top:2px;}
+  .clock{font-family:var(--mono);font-size:0.78rem;color:rgba(234,242,250,0.55);}
+  .status-indicator{
+    width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:8px;
+    animation:pulse 2s infinite;
+  }
+  .status-indicator.live{background:var(--ok);}
+  .status-indicator.fallback{background:var(--warn);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+  main{padding:36px 0 60px;}
+  .row{display:grid;gap:18px;margin-bottom:18px;}
+  .row-3{grid-template-columns:repeat(3,1fr);}
+  .row-2a{grid-template-columns:1.6fr 1fr;}
+  .row-2b{grid-template-columns:1fr 1fr;}
+
+  .panel{
+    background:var(--ink-800);border:1px solid var(--line-soft);padding:20px;
+  }
+  .panel h2{
+    font-family:var(--mono);font-size:0.72rem;letter-spacing:0.04em;
+    color:var(--stamp);margin:0 0 16px;text-transform:uppercase;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .panel h2 .count{color:rgba(234,242,250,0.4);font-weight:400;}
+
+  .stat-big{font-family:var(--display);font-size:2.1rem;font-weight:700;margin:0;}
+  .stat-label{font-size:0.85rem;color:rgba(234,242,250,0.6);margin-top:6px;}
+  .stat-trend{font-family:var(--mono);font-size:0.75rem;margin-top:10px;}
+  .trend-up{color:var(--ok);} .trend-down{color:var(--bad);} .trend-flat{color:var(--warn);}
+
+  .priority-item{margin-bottom:16px;cursor:pointer;}
+  .priority-item:last-child{margin-bottom:0;}
+  .priority-top{display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:6px;}
+  .priority-top .name{font-weight:500;}
+  .priority-top .pct{font-family:var(--mono);color:rgba(234,242,250,0.5);}
+  .bar-track{height:8px;background:rgba(234,242,250,0.1);position:relative;overflow:hidden;cursor:pointer;}
+  .bar-fill{height:100%;background:var(--stamp);transition:width 0.4s ease;}
+  .priority-detail{
+    max-height:0;overflow:hidden;transition:max-height 0.25s ease;
+    font-size:0.82rem;color:rgba(234,242,250,0.6);
+  }
+  .priority-item.open .priority-detail{max-height:60px;margin-top:8px;}
+  .priority-item.updating .bar-fill{opacity:0.6;}
+
+  .agent-stats{display:flex;gap:0;border:1px solid var(--line-soft);}
+  .agent-stat{flex:1;text-align:center;padding:16px 8px;border-right:1px solid var(--line-soft);}
+  .agent-stat:last-child{border-right:none;}
+  .agent-stat .n{font-family:var(--display);font-size:1.6rem;font-weight:700;}
+  .agent-stat .l{font-family:var(--mono);font-size:0.68rem;color:rgba(234,242,250,0.5);margin-top:4px;}
+  .agent-stat.active .n{color:var(--ok);}
+  .agent-stat.waiting .n{color:var(--warn);}
+  .agent-stat.failed .n{color:var(--bad);}
+  .agent-list{margin-top:16px;display:flex;flex-direction:column;gap:8px;}
+  .agent-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:0.85rem;padding:9px 0;border-top:1px solid var(--line-soft);
+    cursor:pointer;transition:opacity 0.2s;
+  }
+  .agent-row:hover{opacity:0.8;}
+  .agent-row .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:8px;}
+  .dot-active{background:var(--ok);} .dot-waiting{background:var(--warn);} .dot-failed{background:var(--bad);}
+  .agent-row .name{display:flex;align-items:center;}
+  .agent-row .kpi{font-family:var(--mono);color:rgba(234,242,250,0.45);font-size:0.75rem;}
+
+  .bottleneck-item{
+    display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line-soft);
+    font-size:0.88rem;align-items:flex-start;cursor:pointer;transition:opacity 0.2s;
+  }
+  .bottleneck-item:hover{opacity:0.8;}
+  .bottleneck-item:first-child{border-top:none;padding-top:0;}
+  .bottleneck-item .sev{
+    font-family:var(--mono);font-size:0.68rem;padding:2px 7px;border:1px solid;
+    flex:0 0 auto;margin-top:2px;
+  }
+  .sev-high{color:var(--bad);border-color:var(--bad);}
+  .sev-med{color:var(--warn);border-color:var(--warn);}
+  .bottleneck-item .txt strong{display:block;font-weight:500;margin-bottom:2px;}
+  .bottleneck-item .txt span{color:rgba(234,242,250,0.5);font-size:0.8rem;}
+  .bottleneck-item .action{font-size:0.75rem;color:var(--stamp);margin-top:4px;cursor:pointer;opacity:0;}
+  .bottleneck-item:hover .action{opacity:1;}
+
+  .imp-item{
+    display:flex;justify-content:space-between;padding:11px 0;
+    border-top:1px solid var(--line-soft);font-size:0.86rem;
+  }
+  .imp-item:first-child{border-top:none;padding-top:0;}
+  .imp-item .tag{font-family:var(--mono);font-size:0.68rem;color:var(--stamp);margin-right:8px;}
+  .imp-item .when{font-family:var(--mono);font-size:0.75rem;color:rgba(234,242,250,0.4);}
+
+  .loop-strip{
+    display:flex;overflow-x:auto;gap:0;border:1px solid var(--line-soft);
+    scrollbar-width:thin;
+  }
+  .loop-step{
+    flex:1 0 auto;min-width:104px;text-align:center;padding:16px 10px;
+    border-right:1px solid var(--line-soft);position:relative;
+  }
+  .loop-step:last-child{border-right:none;}
+  .loop-step .n{font-family:var(--mono);font-size:0.68rem;color:var(--stamp-dim);}
+  .loop-step .t{font-family:var(--display);font-size:0.86rem;font-weight:600;margin-top:4px;}
+  .loop-step.current{background:rgba(232,98,44,0.14);}
+  .loop-step.current .t{color:var(--stamp);}
+
+  .toast{
+    position:fixed;bottom:20px;right:20px;background:var(--ink-800);border:1px solid var(--line-soft);
+    padding:12px 16px;border-radius:4px;font-size:0.85rem;max-width:300px;
+    animation:slideIn 0.3s ease;z-index:999;
+  }
+  .toast.success{border-color:var(--ok);color:var(--ok);}
+  .toast.error{border-color:var(--bad);color:var(--bad);}
+  @keyframes slideIn{from{transform:translateX(400px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+  footer{border-top:1px solid var(--line-soft);padding:20px 0;font-family:var(--mono);font-size:0.72rem;color:rgba(234,242,250,0.35);text-align:center;}
+
+  @media (max-width:900px){
+    .row-3{grid-template-columns:1fr;}
+    .row-2a,.row-2b{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body class="grid-bg">
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <span class="mark">K</span>
+      <div>
+        <h1>KI BLUEPRINT™ CEO MANAGER</h1>
+        <div class="sub">GOAL → PLAN → ACTION → VERIFY → MEASURE → LEARN → IMPROVE
+          <span class="status-indicator live" id="statusIndicator"></span>
+        </div>
+      </div>
+    </div>
+    <div class="clock" id="clock"></div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="banner" id="banner">
+    <div class="wrap">
+      <div class="banner-inner">
+        <span class="banner-icon">⚠</span>
+        <div class="banner-text">
+          <strong>Backend not connected</strong>
+          <span>Showing sample data. Start backend: npm run dev</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row row-3">
+    <div class="panel">
+      <h2>Goal</h2>
+      <p class="stat-big" id="goalAmount">₱0</p>
+      <p class="stat-label" id="goalLabel"></p>
+      <p class="stat-trend" id="goalTrend"></p>
+    </div>
+    <div class="panel">
+      <h2>KPIs</h2>
+      <p class="stat-big" id="kpiStats">0 / 0</p>
+      <p class="stat-label">Core KPIs on target this week</p>
+      <p class="stat-trend" id="kpiTrend"></p>
+    </div>
+    <div class="panel">
+      <h2>Risks</h2>
+      <p class="stat-big" id="riskCount">0</p>
+      <p class="stat-label">Open items need CEO attention</p>
+      <p class="stat-trend" id="riskTrend"></p>
+    </div>
+  </div>
+
+  <div class="row row-2a">
+    <div class="panel">
+      <h2>Today's Priorities <span class="count" id="prioCount"></span></h2>
+      <div id="priorityList"></div>
+    </div>
+    <div class="panel">
+      <h2>AI Agents</h2>
+      <div class="agent-stats">
+        <div class="agent-stat active"><div class="n" id="agentActive">0</div><div class="l">ACTIVE</div></div>
+        <div class="agent-stat waiting"><div class="n" id="agentWaiting">0</div><div class="l">WAITING</div></div>
+        <div class="agent-stat failed"><div class="n" id="agentFailed">0</div><div class="l">FAILED</div></div>
+      </div>
+      <div class="agent-list" id="agentList"></div>
+    </div>
+  </div>
+
+  <div class="row row-2b">
+    <div class="panel">
+      <h2>Bottlenecks</h2>
+      <div id="bottleneckList"></div>
+    </div>
+    <div class="panel">
+      <h2>Improvement Log</h2>
+      <div id="impList"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Operating Loop</h2>
+    <div class="loop-strip" id="loopStrip"></div>
+  </div>
+
+</main>
+
+<footer>KI BLUEPRINT™ CEO MANAGER — Live Dashboard with Real-time Updates</footer>
+
+<script>
+// Configuration
+const API_BASE = 'http://localhost:5000';
+let isLive = false;
+let dashboardState = { priorities: [], agents: [], bottlenecks: [] };
+
+// Sample fallback data
+const sampleData = {
+  goal: {
+    target_amount: 1200000,
+    current_amount: 816000,
+    percentage: 68,
+    status: 'on_pace',
+    trend: 'up',
+    notes: '4 weeks left in quarter'
+  },
+  kpis_on_target: 3,
+  kpis_total: 5,
+  kpis_trend: 'down',
+  kpis_note: 'lead response time slipping',
+  open_risks: 2,
+  priorities: [
+    {id:1, name:"Sales", progress:82, notes:"Deep Deal Analysis: 6 opportunities in active review."},
+    {id:2, name:"Operations", progress:64, notes:"Freedom/Buyback: 2 processes queued for automation."},
+    {id:3, name:"Marketing", progress:55, notes:"Everyday Content: this week's calendar 55% published."},
+    {id:4, name:"People", progress:38, notes:"2 team members pending Level 3 (Verify) certification."}
+  ],
+  agents: [
+    {id:1, name:"SEO Analysis Agent", status:"active", kpi:"Audit accuracy 94%"},
+    {id:2, name:"Lead Follow-up Agent", status:"active", kpi:"Response time 6m"},
+    {id:3, name:"Content Draft Agent", status:"waiting", kpi:"Awaiting approval"},
+    {id:4, name:"Onboarding Checklist Agent", status:"failed", kpi:"Missing data — escalated"}
+  ],
+  bottlenecks: [
+    {id:1, severity:"high", title:"Lead response delay", description:"Average first-response time up to 6 hours this week."},
+    {id:2, severity:"med", title:"Content approval backlog", description:"9 drafts waiting on human sign-off."},
+    {id:3, severity:"med", title:"Customer onboarding exception", description:"1 account stuck on missing verification data."}
+  ],
+  improvements: [
+    {id:1, tag:"SOP", description:"Updated lead-qualification SOP after repeat miscategorization.", created_at: new Date(Date.now() - 2*24*60*60*1000)},
+    {id:2, tag:"AUTOMATE", description:"Buyback: automated weekly reporting, saving ~3 hrs/week.", created_at: new Date(Date.now() - 5*24*60*60*1000)},
+    {id:3, tag:"5 WHYS", description:"Root-caused onboarding delay to a missing intake field.", created_at: new Date(Date.now() - 7*24*60*60*1000)}
+  ],
+  loop: ["GOAL","PLAN","AGENT","TOOL","PERMISSION","ACTION","VERIFY","MEASURE","LEARN","IMPROVE","SOP","SCALE"]
+};
+
+function updateClock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleString('en-US',{
+    weekday:'short', hour:'2-digit', minute:'2-digit'
+  }).toUpperCase();
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+function showToast(message, type = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+async function fetchDashboard(){
+  try {
+    const response = await fetch(`${API_BASE}/api/dashboard`, { 
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error('Backend unavailable');
+    
+    const data = await response.json();
+    isLive = true;
+    showBanner(false);
+    updateStatus('live');
+    
+    // Fetch detailed data
+    await Promise.all([
+      fetchPriorities(),
+      fetchAgents(),
+      fetchBottlenecks(),
+      fetchImprovements()
+    ]);
+    
+    renderDashboard(data, true);
+  } catch (err) {
+    console.log('Backend unavailable, using sample data:', err.message);
+    isLive = false;
+    showBanner(true);
+    updateStatus('fallback');
+    renderDashboard(sampleData, false);
+  }
+}
+
+async function fetchPriorities() {
+  try {
+    const response = await fetch(`${API_BASE}/api/priorities`);
+    if (response.ok) {
+      dashboardState.priorities = await response.json();
+    }
+  } catch (err) {
+    console.log('Failed to fetch priorities');
+  }
+}
+
+async function fetchAgents() {
+  try {
+    const response = await fetch(`${API_BASE}/api/agents`);
+    if (response.ok) {
+      dashboardState.agents = await response.json();
+    }
+  } catch (err) {
+    console.log('Failed to fetch agents');
+  }
+}
+
+async function fetchBottlenecks() {
+  try {
+    const response = await fetch(`${API_BASE}/api/bottlenecks`);
+    if (response.ok) {
+      dashboardState.bottlenecks = await response.json();
+    }
+  } catch (err) {
+    console.log('Failed to fetch bottlenecks');
+  }
+}
+
+async function fetchImprovements() {
+  try {
+    const response = await fetch(`${API_BASE}/api/improvements`);
+    if (response.ok) {
+      dashboardState.improvements = await response.json();
+    }
+  } catch (err) {
+    console.log('Failed to fetch improvements');
+  }
+}
+
+async function updatePriority(priorityId, newProgress) {
+  if (!isLive) {
+    showToast('Cannot update: backend not connected', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/priorities/${priorityId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ progress: newProgress })
+    });
+    
+    if (response.ok) {
+      showToast(`Priority updated to ${newProgress}%`);
+      fetchDashboard(); // Refresh
+    } else {
+      showToast('Failed to update priority', 'error');
+    }
+  } catch (err) {
+    showToast('Error updating priority', 'error');
+  }
+}
+
+async function updateAgentStatus(agentId, newStatus) {
+  if (!isLive) {
+    showToast('Cannot update: backend not connected', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/agents/${agentId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    
+    if (response.ok) {
+      showToast(`Agent status changed to ${newStatus}`);
+      fetchDashboard(); // Refresh
+    } else {
+      showToast('Failed to update agent status', 'error');
+    }
+  } catch (err) {
+    showToast('Error updating agent', 'error');
+  }
+}
+
+async function resolveBottleneck(bottleneckId) {
+  if (!isLive) {
+    showToast('Cannot update: backend not connected', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/bottlenecks/${bottleneckId}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (response.ok) {
+      showToast('Bottleneck resolved!');
+      fetchDashboard(); // Refresh
+    } else {
+      showToast('Failed to resolve bottleneck', 'error');
+    }
+  } catch (err) {
+    showToast('Error resolving bottleneck', 'error');
+  }
+}
+
+function showBanner(show) {
+  const banner = document.getElementById('banner');
+  if (show) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function updateStatus(status) {
+  const indicator = document.getElementById('statusIndicator');
+  indicator.className = `status-indicator ${status === 'live' ? 'live' : 'fallback'}`;
+}
+
+function renderDashboard(data, isBackend) {
+  // Goal
+  const goal = data.goal || sampleData.goal;
+  document.getElementById('goalAmount').textContent = `₱${(goal.target_amount/1000000).toFixed(1)}M`;
+  document.getElementById('goalLabel').textContent = `Q3 revenue target — ${goal.percentage || 0}% attained`;
+  const trendIcon = goal.trend === 'up' ? '↑' : goal.trend === 'down' ? '↓' : '→';
+  const trendClass = goal.trend === 'up' ? 'trend-up' : goal.trend === 'down' ? 'trend-down' : 'trend-flat';
+  document.getElementById('goalTrend').className = `stat-trend ${trendClass}`;
+  document.getElementById('goalTrend').textContent = `${trendIcon} ${goal.notes || 'tracking'}`;
+
+  // KPIs
+  const kpis = data.kpis_on_target !== undefined ? data : sampleData;
+  document.getElementById('kpiStats').textContent = `${kpis.kpis_on_target || 0} / ${kpis.kpis_total || 5}`;
+  const kpiTrendIcon = kpis.kpis_trend === 'down' ? '↓' : kpis.kpis_trend === 'up' ? '↑' : '→';
+  const kpiTrendClass = kpis.kpis_trend === 'down' ? 'trend-down' : kpis.kpis_trend === 'up' ? 'trend-up' : 'trend-flat';
+  document.getElementById('kpiTrend').className = `stat-trend ${kpiTrendClass}`;
+  document.getElementById('kpiTrend').textContent = `${kpiTrendIcon} ${kpis.kpis_note || 'lead response time slipping'}`;
+
+  // Risks
+  const risks = data.open_risks !== undefined ? data : sampleData;
+  document.getElementById('riskCount').textContent = risks.open_risks || 0;
+  document.getElementById('riskTrend').className = `stat-trend trend-down`;
+  document.getElementById('riskTrend').textContent = '↓ onboarding backlog growing';
+
+  // Priorities
+  renderPriorities(dashboardState.priorities.length > 0 ? dashboardState.priorities : (data.priorities || sampleData.priorities));
+
+  // Agents
+  renderAgents(dashboardState.agents.length > 0 ? dashboardState.agents : (data.agents || sampleData.agents));
+
+  // Bottlenecks
+  renderBottlenecks(dashboardState.bottlenecks.length > 0 ? dashboardState.bottlenecks : (data.bottlenecks || sampleData.bottlenecks));
+
+  // Improvements
+  renderImprovements(dashboardState.improvements || data.improvements || sampleData.improvements);
+
+  // Operating Loop
+  renderLoop(data.loop || sampleData.loop);
+}
+
+function renderPriorities(priorities) {
+  const prioEl = document.getElementById('priorityList');
+  prioEl.innerHTML = '';
+  document.getElementById('prioCount').textContent = `(${priorities.length})`;
+  
+  priorities.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'priority-item';
+    item.innerHTML = `
+      <div class="priority-top"><span class="name">${p.name}</span><span class="pct">${p.progress}%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${p.progress}%"></div></div>
+      <div class="priority-detail">${p.notes || ''}</div>
+    `;
+    
+    item.addEventListener('click', () => item.classList.toggle('open'));
+    
+    // Allow clicking on bar to increment progress
+    item.querySelector('.bar-track').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isLive && p.id) {
+        const newProgress = Math.min(100, p.progress + 10);
+        updatePriority(p.id, newProgress);
+      }
+    });
+    
+    prioEl.appendChild(item);
+  });
+}
+
+function renderAgents(agents) {
+  const active = agents.filter(a => a.status === 'active').length;
+  const waiting = agents.filter(a => a.status === 'waiting').length;
+  const failed = agents.filter(a => a.status === 'failed').length;
+
+  document.getElementById('agentActive').textContent = active;
+  document.getElementById('agentWaiting').textContent = waiting;
+  document.getElementById('agentFailed').textContent = failed;
+
+  const agentListEl = document.getElementById('agentList');
+  agentListEl.innerHTML = '';
+  
+  agents.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'agent-row';
+    row.innerHTML = `
+      <span class="name"><span class="dot dot-${a.status}"></span>${a.name}</span>
+      <span class="kpi">${a.kpi}</span>
+    `;
+    
+    // Click to cycle status
+    row.addEventListener('click', () => {
+      if (isLive && a.id) {
+        const statuses = ['active', 'waiting', 'failed'];
+        const currentIdx = statuses.indexOf(a.status);
+        const nextStatus = statuses[(currentIdx + 1) % statuses.length];
+        updateAgentStatus(a.id, nextStatus);
+      }
+    });
+    
+    agentListEl.appendChild(row);
+  });
+}
+
+function renderBottlenecks(bottlenecks) {
+  const bnEl = document.getElementById('bottleneckList');
+  bnEl.innerHTML = '';
+  
+  bottlenecks.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'bottleneck-item';
+    const sevClass = b.severity === 'high' ? 'high' : 'med';
+    div.innerHTML = `
+      <span class="sev sev-${sevClass}">${b.severity.toUpperCase()}</span>
+      <div style="flex:1;">
+        <span class="txt"><strong>${b.title}</strong><span>${b.description}</span></span>
+        <div class="action" onclick="event.stopPropagation();">✓ Mark resolved (click here)</div>
+      </div>
+    `;
+    
+    div.addEventListener('click', () => {
+      if (isLive && b.id) {
+        resolveBottleneck(b.id);
+      }
+    });
+    
+    bnEl.appendChild(div);
+  });
+}
+
+function renderImprovements(improvements) {
+  const impEl = document.getElementById('impList');
+  impEl.innerHTML = '';
+  
+  improvements.forEach(i => {
+    const div = document.createElement('div');
+    div.className = 'imp-item';
+    
+    let when = 'just now';
+    if (i.created_at) {
+      const date = new Date(i.created_at);
+      const diffMs = Date.now() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) when = '1d ago';
+      else if (diffDays > 1) when = `${diffDays}d ago`;
+      else {
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        if (diffHours > 0) when = `${diffHours}h ago`;
+      }
+    }
+    
+    div.innerHTML = `<span><span class="tag">${i.tag}</span>${i.description}</span><span class="when">${when}</span>`;
+    impEl.appendChild(div);
+  });
+}
+
+function renderLoop(loopSteps) {
+  const loopEl = document.getElementById('loopStrip');
+  loopEl.innerHTML = '';
+  const currentIdx = 5;
+  
+  loopSteps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.className = 'loop-step' + (i === currentIdx ? ' current' : '');
+    div.innerHTML = `<div class="n">${String(i+1).padStart(2,'0')}</div><div class="t">${step}</div>`;
+    loopEl.appendChild(div);
+  });
+}
+
+// Initial load and periodic refresh
+fetchDashboard();
+setInterval(fetchDashboard, 30000); // Poll every 30 seconds
+</script>
+
+</body>
+</html>
